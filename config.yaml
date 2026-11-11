@@ -57,7 +57,8 @@ rerank:
 
 # ---------- 检索 ----------
 retrieval:
-  # 召回窗口别太小：正确块可能排在 20 名之后，20 会被直接截断；50 更稳
+  # 召回窗口别太小：实测「都有那些数据类型」的正确块（1-04 类型转换）向量排名第 38，
+  # dense_k=20 会被直接截断，导致答非所问。50 能把它捞回来
   dense_k: 50
   bm25_k: 50
   # RRF 融合常数
@@ -66,11 +67,22 @@ retrieval:
   final_k: 5
   # 上下文总长度上限
   context_max_chars: 7000
+  # 【第一道闸】绝对阈值靠不住（实测：库里完全没写的问题，bge-m3 也能给到 0.55），
+  # 所以只做相对过滤：留下与最高分差距在 dense_margin 以内的块
+  min_dense_score: 0.30
+  dense_margin: 0.10
+  # 【第二道闸的前置检查】生成前先用一次极短调用判断「这段片段能否回答问题」，
+  # 判定不能就直接拒答，不再生成。关掉它就会退回到“只靠 system prompt 约束”
+  verify_with_llm: true
+  # 最高向量分已经很高时，说明十有八九能答，跳过预检省一次往返
+  skip_verify_score: 0.65
 
 # ---------- 生成 ----------
 llm:
   # 本机 Ollama 的 OpenAI 兼容接口；换回 DeepSeek 时改回 https://api.deepseek.com + deepseek-chat
   base_url: "http://127.0.0.1:11434/v1"
   model: "qwen2.5:7b"
+  # 留空则读环境变量 api_key_env（本机用 OLLAMA_API_KEY=ollama 占位）
+  api_key: ""
   api_key_env: "OLLAMA_API_KEY"
   temperature: 0.2

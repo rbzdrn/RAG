@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import pickle
+from collections import Counter
 from pathlib import Path
 from typing import Callable
 
@@ -152,7 +153,7 @@ class VectorStore:
 
     # ---------- 查询 ----------
     def search_dense(self, vector: np.ndarray, k: int, where: str | None = None) -> list[dict]:
-        query = self.chunks.search([float(x) for x in vector]).limit(k)
+        query = self.chunks.search([float(x) for x in vector]).metric("cosine").limit(k)
         if where:
             query = query.where(where, prefilter=True)
         rows = query.to_list()
@@ -163,6 +164,12 @@ class VectorStore:
             row["_dense_score"] = float(1.0 - distance) if distance is not None else 0.0
             out.append(row)
         return out
+
+    def list_tags(self) -> list[str]:
+        """库里出现过的标签，按出现次数降序。"""
+        rows = self.chunks.search().select(["tags_text"]).limit(100000).to_list()
+        counter = Counter(t for r in rows for t in (r.get("tags_text") or "").split())
+        return [t for t, _ in counter.most_common()]
 
     def get_parents(self, ids: list[str]) -> dict[str, str]:
         if not ids:
