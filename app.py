@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from pathlib import Path
 
@@ -12,8 +13,24 @@ from rag.config import ROOT, Config
 from rag import history
 from rag.embedder import Embedder
 from rag.generator import Generator, validate_citations
-from rag.retriever import Retriever
+from rag.retriever import Hit, Retriever
 from rag.store import VectorStore, load_bm25
+
+
+def _strip_breadcrumb(text: str, note_title: str) -> str:
+    """父块正文第一行是「笔记标题 > 章节」的面包屑，展示时去掉避免标题重复。"""
+    head, sep, rest = (text or "").partition("\n\n")
+    if sep and (">" in head or head.strip() == (note_title or "").strip()):
+        return rest.strip()
+    return (text or "").strip()
+
+
+def _cited_sources(answer: str, hits: list[Hit]) -> list[tuple[int, Hit]]:
+    """答案里 [n] 实际引用了哪几段就只展示哪几段；一个都没引用则全展示。"""
+    refs = {int(n) for n in re.findall(r"\[(\d{1,2})\]", answer or "")}
+    picked = [(i, h) for i, h in enumerate(hits, 1) if i in refs]
+    return picked or list(enumerate(hits, 1))
+
 
 st.set_page_config(page_title="Obsidian 知识库问答", page_icon=None, layout="wide")
 
@@ -172,15 +189,18 @@ def main() -> None:
             answer = "（生成失败）"
         t_gen = time.perf_counter() - t_gen0
 
+        cited = _cited_sources(answer, hits)
         sources = [
             f"[{i}] 《{hit.note_title}》 · {hit.heading_path} · score={hit.score:.3f}"
-            for i, hit in enumerate(hits, 1)
+            for i, hit in cited
         ]
-        with st.expander(f"引用来源（{len(hits)}）", expanded=False):
-            for i, hit in enumerate(hits, 1):
+        with st.expander(f"引用来源（{len(cited)}）", expanded=False):
+            if len(cited) < len(hits):
+                st.caption(f"只显示答案实际引用的 {len(cited)} 段，其余 {len(hits) - len(cited)} 段未被采用。")
+            for i, hit in cited:
                 st.markdown(f"**[{i}] {hit.note_title}** — `{hit.note_id}`")
                 st.caption(hit.heading_path)
-                st.text((hit.parent_text or hit.text)[:600])
+                st.text(_strip_breadcrumb(hit.parent_text or hit.text, hit.note_title)[:600])
 
         bad_refs = validate_citations(answer, len(hits))
         if bad_refs:

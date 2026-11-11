@@ -46,13 +46,15 @@ embed:
 rerank:
   enabled: false
   model: "BAAI/bge-reranker-base"
-  # 进入重排的候选数量
-  top_n: 20
+  # 进入重排的候选数量（重排关闭时，这里也是融合后的候选池上限）
+  top_n: 30
 
 # ---------- 检索 ----------
 retrieval:
-  dense_k: 20
-  bm25_k: 20
+  # 召回窗口别太小：实测「都有那些数据类型」的正确块（1-04 类型转换）向量排名第 38，
+  # dense_k=20 会被直接截断，导致答非所问。50 能把它捞回来
+  dense_k: 50
+  bm25_k: 50
   # RRF 融合常数
   rrf_k: 60
   # 最终送给大模型的片段数

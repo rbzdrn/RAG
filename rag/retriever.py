@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 import numpy as np
 
 from .embedder import Embedder, resolve_device
 from .store import BM25Index, VectorStore
+
+# 疑问模板词几乎不携带检索信息，却会把向量带偏（"都有那些数据类型" → 更像在问"哪些/那些"）
+_QUERY_FILLER_RE = re.compile(
+    r"(都有哪些|都有那些|有哪些|有那些|都是哪些|分别是哪些|包括哪些|请问|帮我|告诉我|一下)"
+)
+_PUNCT_RE = re.compile(r"[？?。！!，,、；;：:\s]+")
 
 
 @dataclass
@@ -49,12 +56,12 @@ class Retriever:
         self.embedder = embedder
         self.bm25 = bm25
         self.cfg = cfg
-        self.dense_k = int(cfg.get("retrieval.dense_k", 20))
-        self.bm25_k = int(cfg.get("retrieval.bm25_k", 20))
+        self.dense_k = int(cfg.get("retrieval.dense_k", 50))
+        self.bm25_k = int(cfg.get("retrieval.bm25_k", 50))
         self.rrf_k = int(cfg.get("retrieval.rrf_k", 60))
         self.final_k = int(cfg.get("retrieval.final_k", 5))
         self.rerank_enabled = bool(cfg.get("rerank.enabled", True))
-        self.rerank_top_n = int(cfg.get("rerank.top_n", 20))
+        self.rerank_top_n = int(cfg.get("rerank.top_n", 30))
         # 第一道闸：砍掉分数垫底的块。绝对阈值不可靠（实测无关问题也能到 0.55），
         # 所以只保留与最高分差距在 dense_margin 以内的
         self.min_dense_score = float(cfg.get("retrieval.min_dense_score", 0.30))
@@ -83,17 +90,28 @@ class Retriever:
             def predicate(record: dict, _t=normalized) -> bool:
                 return f" {_t} " in (record.get("tags_text") or "")
 
-        dense_rows = self.store.search_dense(self.embedder.encode_query(query), self.dense_k, where)
-        bm25_rows = self.bm25.search(query, self.bm25_k, predicate)
+        # 原问句和「去疑问词」的问句各做一次向量召回，当两路独立排名一起做 RRF：
+        # 两种说法都能命中的块，说明不是靠「哪些/那些」这类噪音词撑起来的
+        variants = [query]
+        cleaned = self._clean_query(query)
+        if cleaned != query:
+            variants.append(cleaned)
 
         merged: dict[str, Hit] = {}
-        for rank, row in enumerate(dense_rows):
-            hit = merged.get(row["id"])
-            if hit is None:
-                hit = self._to_hit(row)
-                merged[row["id"]] = hit
-            hit.dense_rank = rank + 1
-            hit.rrf_score += 1.0 / (self.rrf_k + rank + 1)
+        for variant in variants:
+            dense_rows = self.store.search_dense(
+                self.embedder.encode_query(variant), self.dense_k, where
+            )
+            for rank, row in enumerate(dense_rows):
+                hit = merged.get(row["id"])
+                if hit is None:
+                    hit = self._to_hit(row)
+                    merged[row["id"]] = hit
+                hit.dense_rank = min(hit.dense_rank or rank + 1, rank + 1)
+                hit.dense_score = max(hit.dense_score, float(row.get("_dense_score", 0.0)))
+                hit.rrf_score += 1.0 / (self.rrf_k + rank + 1)
+
+        bm25_rows = self.bm25.search(query, self.bm25_k, predicate)
 
         for rank, row in enumerate(bm25_rows):
             hit = merged.get(row["id"])
@@ -153,6 +171,13 @@ class Retriever:
         best = max(h.dense_score for h in hits)
         floor = max(self.min_dense_score, best - self.dense_margin)
         return [h for h in hits if h.dense_rank is None or h.dense_score >= floor]
+
+    @staticmethod
+    def _clean_query(query: str) -> str:
+        """去掉「都有哪些 / 是什么 / 请问」这类疑问模板词，留下真正要检索的关键词。"""
+        cleaned = _QUERY_FILLER_RE.sub(" ", query or "")
+        cleaned = _PUNCT_RE.sub(" ", cleaned).strip()
+        return cleaned if len(cleaned) >= 2 else (query or "")
 
     @staticmethod
     def _to_hit(row: dict) -> Hit:
