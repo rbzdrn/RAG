@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>切块链路实例 · 1-01.md</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --text:#1f2430; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#4f46e5; --accent-2:#0ea5e9;
+    --green:#10b981; --amber:#f59e0b; --red:#ef4444;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+    --chip:#eef2ff; --chip-text:#4338ca;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.7; font-size:15px;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:32px 24px 80px}
+  header.hero{
+    background:linear-gradient(135deg,#4f46e5 0%,#0ea5e9 100%);
+    color:#fff; border-radius:18px; padding:36px 32px; margin-bottom:28px;
+    box-shadow:0 10px 30px rgba(79,70,229,.25);
+  }
+  header.hero h1{margin:0 0 8px; font-size:28px; letter-spacing:.5px}
+  header.hero p{margin:0; opacity:.9; font-size:14px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .meta span{
+    background:rgba(255,255,255,.18); padding:4px 12px; border-radius:999px;
+    font-size:12.5px; backdrop-filter:blur(4px);
+  }
+  nav.toc{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:18px 22px; margin-bottom:28px;
+  }
+  nav.toc h3{margin:0 0 10px; font-size:14px; color:var(--muted); font-weight:600; letter-spacing:1px}
+  nav.toc ol{margin:0; padding-left:20px; columns:2; column-gap:32px}
+  nav.toc li{margin:4px 0; font-size:14px}
+  nav.toc a{color:var(--accent); text-decoration:none}
+  nav.toc a:hover{text-decoration:underline}
+  section.card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; margin-bottom:24px;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
+  }
+  section.card h2{
+    margin:0 0 6px; font-size:21px; display:flex; align-items:center; gap:10px;
+  }
+  section.card h2 .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:10px;
+    background:var(--accent); color:#fff; font-size:15px; font-weight:600;
+  }
+  section.card h3{
+    margin:22px 0 8px; font-size:16px; color:#334155;
+    border-left:4px solid var(--accent-2); padding-left:10px;
+  }
+  p{margin:8px 0}
+  .muted{color:var(--muted); font-size:13.5px}
+  code.inline{
+    background:#f1f5f9; color:#be185d; padding:1px 6px; border-radius:6px;
+    font-family:"JetBrains Mono","Fira Code",Consolas,monospace; font-size:13px;
+  }
+  pre{
+    background:var(--code-bg); color:var(--code-text); border-radius:12px;
+    padding:16px 18px; overflow-x:auto; font-size:13px; line-height:1.6;
+    font-family:"JetBrains Mono","Fira Code",Consolas,monospace;
+  }
+  pre .c{color:#94a3b8} pre .k{color:#f472b6} pre .s{color:#86efac} pre .n{color:#fbbf24}
+  table{
+    width:100%; border-collapse:collapse; margin:12px 0; font-size:13.5px;
+    border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  }
+  thead th{
+    background:#f8fafc; text-align:left; padding:10px 12px;
+    font-weight:600; color:#334155; border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:9px 12px; border-bottom:1px solid #f1f5f9; vertical-align:top}
+  tbody tr:nth-child(even){background:#fafbfd}
+  tbody tr:last-child td{border-bottom:none}
+  .chip{
+    display:inline-block; background:var(--chip); color:var(--chip-text);
+    padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600;
+    font-family:"JetBrains Mono",Consolas,monospace;
+  }
+  .badge{display:inline-block; padding:2px 9px; border-radius:6px; font-size:12px; font-weight:600}
+  .badge.green{background:#dcfce7; color:#166534}
+  .badge.amber{background:#fef3c7; color:#92400e}
+  .badge.red{background:#fee2e2; color:#991b1b}
+  .badge.blue{background:#dbeafe; color:#1e40af}
+  .callout{
+    border-radius:12px; padding:14px 18px; margin:14px 0; font-size:14px;
+    border-left:4px solid;
+  }
+  .callout.note{background:#eff6ff; border-color:#3b82f6; color:#1e3a8a}
+  .callout.warn{background:#fffbeb; border-color:#f59e0b; color:#78350f}
+  .callout.danger{background:#fef2f2; border-color:#ef4444; color:#7f1d1d}
+  .callout.ok{background:#ecfdf5; border-color:#10b981; color:#064e3b}
+  .callout b{display:block; margin-bottom:4px}
+  .tree{
+    background:#0f172a; color:#cbd5e1; border-radius:12px; padding:18px 20px;
+    font-family:"JetBrains Mono","Fira Code",Consolas,monospace; font-size:13px;
+    line-height:1.75; overflow-x:auto; white-space:pre;
+  }
+  .tree .t-h1{color:#fbbf24; font-weight:600}
+  .tree .t-h2{color:#60a5fa}
+  .tree .t-h3{color:#a78bfa}
+  .tree .t-sec{color:#f472b6; font-size:11.5px}
+  .tree .t-mute{color:#64748b}
+  .timeline{position:relative; margin:16px 0 8px; padding-left:26px}
+  .timeline::before{
+    content:""; position:absolute; left:9px; top:6px; bottom:6px;
+    width:2px; background:linear-gradient(180deg,#4f46e5,#0ea5e9);
+    border-radius:2px;
+  }
+  .timeline .item{position:relative; margin:0 0 16px}
+  .timeline .item::before{
+    content:""; position:absolute; left:-22px; top:6px;
+    width:12px; height:12px; border-radius:50%;
+    background:#fff; border:3px solid var(--accent);
+  }
+  .timeline .item .head{font-weight:600; font-size:14.5px; margin-bottom:4px}
+  .timeline .item .body{font-size:13.5px; color:#475569}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:760px){
+    .grid2{grid-template-columns:1fr}
+    nav.toc ol{columns:1}
+    header.hero{padding:26px 22px}
+    section.card{padding:20px 18px}
+  }
+  footer{text-align:center; color:var(--muted); font-size:12.5px; margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>切块链路实例 · 用 <code style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:6px">1-01.md</code> 跑通 Parent / Chunk 生成</h1>
+    <p>从一篇 Markdown 到「父块 + 子块」的完整推演，配合 <code style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:6px">parser.py</code> / <code style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:6px">chunker.py</code></p>
+    <div class="meta">
+      <span>target = 420</span>
+      <span>maximum = 900</span>
+      <span>minimum = 120</span>
+      <span>overlap = 80</span>
+      <span>parent_max = 2000</span>
+      <span>breadcrumb = on</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h3>目录</h3>
+    <ol>
+      <li><a href="#overview">总览与流水线</a></li>
+      <li><a href="#step0">Step 0 · read_note</a></li>
+      <li><a href="#step1">Step 1 · build_sections</a></li>
+      <li><a href="#step2">Step 2 · chunk_note 五个实例</a></li>
+      <li><a href="#step3">Step 3 · 汇总与写库</a></li>
+      <li><a href="#cheatsheet">关键点速查</a></li>
+    </ol>
+  </nav>
+
+  <!-- ================= 0 ================= -->
+  <section class="card" id="overview">
+    <h2><span class="num">0</span>总览与流水线</h2>
+    <p>一篇笔记进入切块链路，只经过三个函数：</p>
+    <pre><span class="c">raw.md</span>
+  │
+  ├─ <span class="k">read_note()</span>        → Note（title / tags / links / body）
+  │
+  ├─ <span class="k">build_sections()</span>   → Section 树（按 # 标题层级）
+  │
+  └─ <span class="k">chunk_note()</span>       → ChunkResult
+        ├─ 每个 Section → <span class="n">1 个 Parent</span>
+        └─ 每个 Section → <span class="n">N 个 Chunk</span>（原子块打包）</pre>
+
+    <table>
+      <thead><tr><th>阶段</th><th>函数</th><th>输入</th><th>输出</th></tr></thead>
+      <tbody>
+        <tr><td>解析</td><td><code class="inline">read_note</code></td><td>原始 Markdown</td><td><code class="inline">Note</code></td></tr>
+        <tr><td>分节</td><td><code class="inline">build_sections</code></td><td><code class="inline">Note.body</code></td><td><code class="inline">Section</code> 树</td></tr>
+        <tr><td>切块</td><td><code class="inline">chunk_note</code></td><td><code class="inline">Note</code> + <code class="inline">cfg</code></td><td><code class="inline">Parent[]</code> + <code class="inline">Chunk[]</code></td></tr>
+        <tr><td>向量化</td><td><code class="inline">encode_documents</code></td><td><code class="inline">Chunk.text[]</code></td><td><code class="inline">np.ndarray</code></td></tr>
+        <tr><td>写库</td><td><code class="inline">upsert_note</code></td><td><code class="inline">Parent[]</code> + <code class="inline">Chunk[]</code> + 向量</td><td>LanceDB 两表</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================= 1 ================= -->
+  <section class="card" id="step0">
+    <h2><span class="num">1</span>Step 0 · <code class="inline">read_note()</code>：原始文件 → Note</h2>
+
+    <h3>输入</h3>
+    <p><code class="inline">1-01.md</code> 原文（约 1.5 万字）。特征：</p>
+    <ul>
+      <li>没有 frontmatter（开头不是 <code class="inline">---</code>）</li>
+      <li>没有行内 <code class="inline">#tag</code></li>
+      <li>没有 <code class="inline">[[双链]]</code>，目录用 <code class="inline">[文字](#锚点)</code></li>
+    </ul>
+
+    <h3>处理</h3>
+    <table>
+      <thead><tr><th>步骤</th><th>函数</th><th>发生了什么</th></tr></thead>
+      <tbody>
+        <tr><td>拆 frontmatter</td><td><code class="inline">_split_frontmatter</code></td><td>无匹配 → <code class="inline">meta={}</code>，<code class="inline">body_raw=raw</code></td></tr>
+        <tr><td>清洗</td><td><code class="inline">clean_markdown</code></td><td><code class="inline">[课程定位](#s1)</code> → <code class="inline">课程定位</code>；多空行压缩</td></tr>
+        <tr><td>取标题</td><td><code class="inline">meta.get("title") or path.stem</code></td><td><code class="inline">"1-01"</code>（文件名去后缀）</td></tr>
+        <tr><td>合并标签</td><td><code class="inline">fm_tags + inline_tags</code></td><td><code class="inline">[]</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>输出 Note</h3>
+    <table>
+      <thead><tr><th>字段</th><th>值</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">note_id</code></td><td><code class="inline">"1-01.md"</code></td></tr>
+        <tr><td><code class="inline">title</code></td><td><code class="inline">"1-01"</code> <span class="badge amber">不是正文 H1</span></td></tr>
+        <tr><td><code class="inline">frontmatter</code></td><td><code class="inline">{}</code></td></tr>
+        <tr><td><code class="inline">tags</code></td><td><code class="inline">[]</code></td></tr>
+        <tr><td><code class="inline">links</code></td><td><code class="inline">[]</code></td></tr>
+        <tr><td><code class="inline">body</code></td><td>清洗后全文</td></tr>
+        <tr><td><code class="inline">mtime</code> / <code class="inline">content_hash</code></td><td>文件 mtime / sha1</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout note">
+      <b>要点</b>
+      <code class="inline">title</code> 优先级 = frontmatter <code class="inline">title</code> → 文件名。正文里 <code class="inline"># AI大模型应用开发培训 - 第1天...</code> 是 H1，由 <code class="inline">build_sections</code> 单独处理，不进 <code class="inline">title</code>。
+    </div>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section class="card" id="step1">
+    <h2><span class="num">2</span>Step 1 · <code class="inline">build_sections()</code>：Note.body → Section 树</h2>
+
+    <h3>规则</h3>
+    <ol>
+      <li><code class="inline">FENCE_RE</code> 维护 <code class="inline">in_fence</code>，<b>代码块内 # 不当标题</b></li>
+      <li>H1 若等于 <code class="inline">root_title</code> 且 root 无子节点 → 跳过</li>
+      <li>每个标题按层级挂到栈顶父节点，<code class="inline">path = parent.path + [title]</code></li>
+    </ol>
+
+    <h3>输出树（简化）</h3>
+    <div class="tree"><span class="t-mute">root</span> (path=["1-01"])  body=[开头行 + 目录长行]
+└─ <span class="t-h1">H1 "AI大模型应用开发培训 - 第1天：环境搭建启动"</span>
+   ├─ <span class="t-h2">H2 "课程定位"</span>                                  <span class="t-sec">→ s2</span>
+   ├─ <span class="t-h2">H2 "今日学习目标"</span>                              <span class="t-sec">→ s3</span>
+   ├─ <span class="t-h2">H2 "今日主线任务"</span>                              <span class="t-sec">→ s4</span>
+   │  └─ <span class="t-h3">H3 "课堂验收标准"</span>                           <span class="t-sec">→ s5</span>
+   ├─ <span class="t-h2">H2 "第一部分：Python 多版本管理（约 50 分钟）"</span>
+   │  ├─ <span class="t-h3">H3 "0. Python 简史（约 3 分钟）"</span>
+   │  ├─ <span class="t-h3">H3 "1. 概念引入"</span>
+   │  ├─ <span class="t-h3">H3 "2. 核心知识"</span>
+   │  ├─ <span class="t-h3">H3 "3. 程序化示意"</span>
+   │  ├─ <span class="t-h3">H3 "4. 示例演示"</span>                             <span class="t-sec">→ s11（长节，7 chunk）</span>
+   │  └─ <span class="t-h3">H3 "5. 小练习（5–10 分钟）"</span>
+   ├─ <span class="t-h2">H2 "第二部分：虚拟环境与依赖管理（约 45 分钟）"</span>
+   │  ├─ <span class="t-h3">H3 "1. 概念引入"</span>
+   │  ├─ <span class="t-h3">H3 "2. 核心知识"</span>
+   │  ├─ <span class="t-h3">H3 "3. 对比/规则说明"</span>
+   │  ├─ <span class="t-h3">H3 "4. 扩展认识：venv、conda、uv、Poetry 到底怎么选"</span> <span class="t-sec">→ s17（10–15 chunk）</span>
+   │  ├─ <span class="t-h3">H3 "5. 示例演示"</span>
+   │  ├─ <span class="t-h3">H3 "6. 常用国内镜像"</span>
+   │  └─ <span class="t-h3">H3 "7. 小练习（5–10 分钟）"</span>
+   ├─ <span class="t-h2">H2 "第三部分：PyCharm 安装与激活（约 40 分钟）"</span>
+   ├─ <span class="t-h2">H2 "第四部分：解释器绑定与验证脚本（约 35 分钟）"</span>
+   ├─ <span class="t-h2">H2 "第五部分：工程化目录规范（约 25 分钟）"</span>
+   ├─ <span class="t-h2">H2 "课堂实操任务"</span>
+   ├─ <span class="t-h2">H2 "常见问题与易错点"</span>
+   ├─ <span class="t-h2">H2 "扩展阅读"</span>                                <span class="t-sec">→ s52</span>
+   └─ <span class="t-h2">H2 "今日总结"</span>                                <span class="t-sec">→ s54</span></div>
+
+    <p class="muted">深度优先遍历共约 55 个 section，<code class="inline">sec_idx</code> 按 DFS 顺序从 <code class="inline">s0</code> 递增。</p>
+
+    <div class="callout warn">
+      <b>注意</b>
+      <code class="inline">s0</code> 是 root 本身，也会产出 Parent 和 Chunk；它只有开头行 + 目录，语义价值低，属于噪音块。
+    </div>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section class="card" id="step2">
+    <h2><span class="num">3</span>Step 2 · <code class="inline">chunk_note()</code>：每个 Section 同时产出 Parent + Chunk</h2>
+
+    <h3>通用处理</h3>
+    <pre>raw_body   = "\n".join(section.body).strip()
+heading_path = " > ".join(section.path)
+prefix       = _breadcrumb(section.path, True)      <span class="c"># 相邻去重</span>
+parent_id    = f"{note_id}<span class="n">#s{sec_idx}</span>"
+
+parent_text  = f"{prefix}\n\n{raw_body}" if prefix else raw_body
+if len(parent_text) &gt; <span class="n">2000</span>:
+    parent_text = parent_text[:2000].rstrip() + " …"</pre>
+
+    <!-- 3.1 -->
+    <h3>3.1 · s2「课程定位」—— 短文，1 个 chunk</h3>
+    <div class="grid2">
+      <div>
+        <p><b>body</b>（约 230 字）：本节课重点解决"开发环境从无到有"的关键障碍……先命令行后 GUI，避免来回切换。</p>
+        <p><b>prefix</b></p>
+        <pre>1-01 &gt; AI大模型应用开发培训 - 第1天：环境搭建启动 &gt; 课程定位</pre>
+        <p><b>pack_blocks</b>：<code class="inline">units=[230]</code> → <code class="inline">packed=[230]</code>，不合并。</p>
+      </div>
+      <div>
+        <p><b>Parent</b></p>
+        <table>
+          <tbody>
+            <tr><td>id</td><td><code class="inline">1-01.md#s2</code></td></tr>
+            <tr><td>text</td><td>prefix + 230 字（&lt;2000 不截断）</td></tr>
+          </tbody>
+        </table>
+        <p><b>Chunk</b></p>
+        <table>
+          <tbody>
+            <tr><td>id</td><td><code class="inline">1-01.md#s2c0</code></td></tr>
+            <tr><td>text</td><td>prefix + body</td></tr>
+            <tr><td>body</td><td>230 字原文</td></tr>
+            <tr><td>parent_id</td><td><code class="inline">1-01.md#s2</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3.2 -->
+    <h3>3.2 · s11「第一部分 4. 示例演示」—— 长节，7 chunk，Parent 截断</h3>
+    <p><b>body</b> ≈ 2500–3000 字：bash 代码块 + 多个输出 fence + PowerShell 排查 + 方案 fence + 列表。</p>
+
+    <h3>iter_blocks 产出 20 个原子块</h3>
+    <table>
+      <thead><tr><th>#</th><th>类型</th><th>字数</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip">A1</span></td><td>fence</td><td>~500</td><td>主命令演示块</td></tr>
+        <tr><td><span class="chip">A2</span></td><td>段落</td><td>~40</td><td>"命令输出对照……"</td></tr>
+        <tr><td><span class="chip">A3</span></td><td>段落</td><td>~30</td><td>"创建环境……"</td></tr>
+        <tr><td><span class="chip">A4</span></td><td>fence</td><td>~400</td><td>创建环境输出</td></tr>
+        <tr><td><span class="chip">A5</span></td><td>段落</td><td>~20</td><td>"查看环境列表……"</td></tr>
+        <tr><td><span class="chip">A6</span></td><td>fence</td><td>~200</td><td><code class="inline">conda env list</code> 输出</td></tr>
+        <tr><td><span class="chip">A7</span></td><td>段落</td><td>~30</td><td>"激活环境……"</td></tr>
+        <tr><td><span class="chip">A8</span></td><td>fence</td><td>~150</td><td>activate 输出</td></tr>
+        <tr><td><span class="chip">A9</span></td><td>段落</td><td>~20</td><td>"pip 安装包……"</td></tr>
+        <tr><td><span class="chip">A10</span></td><td>fence</td><td>~350</td><td><code class="inline">pip install</code> 输出</td></tr>
+        <tr><td><span class="chip">A11</span></td><td>段落</td><td>~20</td><td>"查看已装包清单……"</td></tr>
+        <tr><td><span class="chip">A12</span></td><td>fence</td><td>~200</td><td><code class="inline">pip list</code> 输出</td></tr>
+        <tr><td><span class="chip">A13</span></td><td>段落</td><td>~60</td><td>"PowerShell 执行策略排查……"</td></tr>
+        <tr><td><span class="chip">A14</span></td><td>段落</td><td>~50</td><td>"在 PowerShell 中首次执行……"</td></tr>
+        <tr><td><span class="chip">A15</span></td><td>fence</td><td>~350</td><td>报错输出</td></tr>
+        <tr><td><span class="chip">A16</span></td><td>段落</td><td>~60</td><td>"这不是 conda 坏了……"</td></tr>
+        <tr><td><span class="chip">A17</span></td><td>fence</td><td>~150</td><td>方案 A</td></tr>
+        <tr><td><span class="chip">A18</span></td><td>fence</td><td>~120</td><td>方案 B</td></tr>
+        <tr><td><span class="chip">A19</span></td><td>段落</td><td>~5</td><td>"重点："</td></tr>
+        <tr><td><span class="chip">A20</span></td><td>列表</td><td>~120</td><td>3 条重点</td></tr>
+      </tbody>
+    </table>
+
+    <h3>pack_blocks 贪心打包（target=420, min=120）</h3>
+    <div class="timeline">
+      <div class="item"><div class="head">c0 ← A1</div><div class="body">500 字；500≥120，+A2 会超 420 → 封口</div></div>
+      <div class="item"><div class="head">c1 ← A2+A3+A4</div><div class="body">拼 A4 时 cur=72&lt;120，继续拼；拼完 474 封口</div></div>
+      <div class="item"><div class="head">c2 ← A5+A6+A7+A8</div><div class="body">406+2+A9=428&gt;420，406≥120 → 断</div></div>
+      <div class="item"><div class="head">c3 ← A9+A10+A11</div><div class="body">394+2+A12=596&gt;420，394≥120 → 断</div></div>
+      <div class="item"><div class="head">c4 ← A12+A13+A14</div><div class="body">314+2+A15=666&gt;420，314≥120 → 断</div></div>
+      <div class="item"><div class="head">c5 ← A15+A16</div><div class="body">412+2+A17=564&gt;420，412≥120 → 断</div></div>
+      <div class="item"><div class="head">c6 ← A17+A18+A19+A20</div><div class="body">全部拼完，401 字，结束封口</div></div>
+    </div>
+
+    <p>输出 7 个 Chunk：<code class="inline">1-01.md#s11c0</code> … <code class="inline">#s11c6</code>，<code class="inline">parent_id = 1-01.md#s11</code>。</p>
+
+    <div class="callout danger">
+      <b>Parent 被截断</b>
+      Parent 只覆盖到 A7 左右。若命中 <code class="inline">c6</code>，靠 <code class="inline">retriever</code> 的 <code class="inline">dropped</code> 机制把 <code class="inline">c6.body</code> 用 <code class="inline">[命中片段]</code> 补进 <code class="inline">parent_text</code>。
+    </div>
+
+    <!-- 3.3 -->
+    <h3>3.3 · s17「第二部分 4. 扩展认识」—— 超长节，10–15 个 chunk</h3>
+    <p><b>body</b> ≈ 5000+ 字，含 4 个对比表格。每个完整表格 → 1 个原子块（<code class="inline">TABLE_RE</code> 连续 <code class="inline">|</code> 行保持完整）。</p>
+    <p>表格通常 300–500 字，可能单独成 chunk，或与相邻段落拼。约产出 <b>10–15 个 chunk</b>，<code class="inline">id = 1-01.md#s17c0</code> … <code class="inline">#s17c12</code>。Parent 截断到 2000 + <code class="inline">…</code>。</p>
+
+    <!-- 3.4 -->
+    <h3>3.4 · s54「今日总结」—— 单个表格，1 个 chunk</h3>
+    <p><b>body</b>：一个 6 行 Markdown 表格。<code class="inline">TABLE_RE</code> 命中，整表一个原子块（约 500 字 &lt; 900，不切）。Parent 约 550 字 &lt; 2000，<b>不截断</b>。Chunk <code class="inline">id = 1-01.md#s54c0</code>。</p>
+
+    <!-- 3.5 -->
+    <h3>3.5 · s0 root —— 「目录 chunk」，噪音块</h3>
+    <p><b>body</b>：开头行 + 清洗后的长串目录文字，两行无空行 → 一个普通段落原子块（800–1000 字）。</p>
+    <p>若 &gt; 900 → <code class="inline">split_long_text</code> 按句切；目录无句号 → <b>硬切</b>，<code class="inline">step = 900-80 = 820</code>，切成 2 片。<code class="inline">pack_blocks</code> → 1–2 个 chunk。</p>
+
+    <div class="callout warn">
+      <b>问题</b>
+      这个 chunk 只有目录文字，语义价值低。当前代码不过滤，实际项目应加判断（如 <code class="inline">if section is root and not section.body[1:]: continue</code>）。
+    </div>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section class="card" id="step3">
+    <h2><span class="num">4</span>Step 3 · 汇总 ChunkResult 与写库</h2>
+
+    <table>
+      <thead><tr><th>项目</th><th>估计值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>parents 数量</td><td>约 55</td><td>每个非空 section 一个（含 root）</td></tr>
+        <tr><td>chunks 数量</td><td>约 60–80</td><td>短文 1 个/节；长文 7–15 个/节</td></tr>
+        <tr><td>截断的 Parent</td><td><code class="inline">s11 s17 s27 s32 s34 s38 s39 s47</code></td><td>长节超 2000 字</td></tr>
+        <tr><td>tags_text</td><td>全部 <code class="inline">" "</code></td><td>无标签</td></tr>
+      </tbody>
+    </table>
+
+    <h3>后续两条链路</h3>
+    <pre>ChunkResult
+  ├─ <span class="k">encode_documents</span>([c.text for c in chunks])  → 向量 (N, dim)
+  └─ <span class="k">upsert_note</span>(note_id, parents, chunks, vectors)
+        ├─ chunks  表：id, vector, text, body, ..., parent_id, mtime
+        └─ parents 表：id, text, note_id, note_title, heading_path, tags_text  <span class="c">（无 vector）</span></pre>
+
+    <div class="callout ok">
+      <b>核心</b>
+      子块有向量能检索，父块只做档案袋等回填。
+    </div>
+  </section>
+
+  <!-- ================= 5 ================= -->
+  <section class="card" id="cheatsheet">
+    <h2><span class="num">5</span>关键点速查</h2>
+    <table>
+      <thead><tr><th>问题</th><th>答案</th></tr></thead>
+      <tbody>
+        <tr><td>title 从哪来</td><td>frontmatter <code class="inline">title</code> → 文件名（<code class="inline">path.stem</code>），<b>不是</b>正文 H1</td></tr>
+        <tr><td>tags 从哪来</td><td>frontmatter <code class="inline">tags</code>/<code class="inline">tag</code> + 正文 <code class="inline">#tag</code>，合并去重</td></tr>
+        <tr><td>双链 <code class="inline">[[RAG|信息检索]]</code></td><td><code class="inline">rag</code> 进 <code class="inline">Note.links</code>，正文显示 <code class="inline">信息检索</code></td></tr>
+        <tr><td>Parent 是什么</td><td>一个 section 的完整正文 + 面包屑，超过 <code class="inline">parent_max</code> 截断</td></tr>
+        <tr><td>Chunk 是什么</td><td>section 正文按原子块打包出的子块 + 面包屑</td></tr>
+        <tr><td>两者关系</td><td><b>同时生成</b>，<code class="inline">Chunk.parent_id</code> → <code class="inline">Parent.id</code></td></tr>
+        <tr><td>原子块边界</td><td>代码块 / 表格 / 引用 / 列表 保持完整；段落按空行切</td></tr>
+        <tr><td>什么时候真的"切"</td><td>单原子块 &gt; <code class="inline">maximum</code> 才 <code class="inline">split_long_text</code></td></tr>
+        <tr><td>minimum 作用</td><td>当前块 &lt; <code class="inline">minimum</code> 时继续拼，哪怕超 <code class="inline">target</code></td></tr>
+        <tr><td>向量化用哪个</td><td><code class="inline">Chunk.text</code>（面包屑 + 正文）</td></tr>
+        <tr><td>展示用哪个</td><td><code class="inline">Chunk.body</code>（纯正文）</td></tr>
+        <tr><td>父块回填靠什么</td><td><code class="inline">parent_id</code> 查 <code class="inline">parents</code> 表 → <code class="inline">hit.parent_text</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>检查题</h3>
+    <ol>
+      <li><code class="inline">1-01.md</code> 没有 frontmatter，<code class="inline">title</code> 最终是什么？想让 <code class="inline">title</code> 变成"AI大模型应用开发培训 - 第1天"，有哪两种改法？</li>
+      <li><code class="inline">s11</code> 的 Parent 被截断。若用户命中 <code class="inline">s11c6</code>，<code class="inline">retriever</code> 怎么保证大模型还能看到 <code class="inline">c6</code> 的正文？</li>
+      <li><code class="inline">s0</code> 的"目录 chunk"在检索时可能带来什么噪音？想过滤它，应在 <code class="inline">chunk_note</code> 里加什么判断？</li>
+    </ol>
+  </section>
+
+  <footer>
+    chunk-demo · 配套 parser.py / chunker.py · 单文件可直接浏览器打开
+  </footer>
+
+</div>
+</body>
+</html>

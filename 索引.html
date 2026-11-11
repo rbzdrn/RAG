@@ -1,0 +1,213 @@
+
+---
+
+## 版本二：HTML 格式 (`rag-library-demo.html`)
+
+保存为 `.html` 双击即可在浏览器中打开，样式精美，层级清晰。
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG 核心流程：建索引与查找（图书馆比喻）</title>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --text:#1e293b; --muted:#64748b;
+    --line:#e2e8f0; --accent:#3b82f6; --accent-bg:#eff6ff;
+    --green:#10b981; --green-bg:#ecfdf5; --amber:#f59e0b; --amber-bg:#fffbeb;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6; padding:40px 20px;
+  }
+  .container{max-width:900px; margin:0 auto}
+  
+  /* 头部 */
+  header{
+    text-align:center; margin-bottom:40px;
+  }
+  header h1{
+    font-size:28px; margin-bottom:10px; color:#0f172a;
+  }
+  header p{
+    color:var(--muted); font-size:15px; background:#fff; display:inline-block;
+    padding:6px 16px; border-radius:20px; border:1px solid var(--line);
+  }
+
+  /* 卡片通用 */
+  .section-card{
+    background:var(--card); border-radius:16px; padding:30px;
+    border:1px solid var(--line); box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);
+    margin-bottom:30px;
+  }
+  .section-title{
+    font-size:20px; margin:0 0 20px 0; padding-bottom:12px; border-bottom:2px solid var(--line);
+    display:flex; align-items:center; gap:10px;
+  }
+  .badge{
+    padding:4px 12px; border-radius:99px; font-size:12px; font-weight:bold; letter-spacing:.5px;
+  }
+  .badge.offline{ background:var(--amber-bg); color:var(--amber); }
+  .badge.online{ background:var(--accent-bg); color:var(--accent); }
+
+  /* 表格 */
+  table{
+    width:100%; border-collapse:collapse; margin-top:15px; font-size:14.5px;
+  }
+  th, td{
+    padding:14px 16px; text-align:left; border-bottom:1px solid var(--line);
+  }
+  th{
+    background:#f1f5f9; color:#475569; font-weight:600;
+  }
+  tr:last-child td{ border-bottom:none; }
+  tr:hover{ background:#f8fafc; }
+  
+  .code-tag{
+    background:#f1f5f9; color:#db2777; padding:2px 6px; border-radius:4px;
+    font-family:"JetBrains Mono",Consolas,monospace; font-size:13px;
+  }
+
+  /* 步骤图解（阶段二） */
+  .step-list{
+    display:flex; flex-direction:column; gap:16px; margin-top:20px;
+  }
+  .step-item{
+    display:flex; gap:16px; background:var(--accent-bg); padding:18px; border-radius:12px; border-left:4px solid var(--accent);
+  }
+  .step-num{
+    background:var(--accent); color:#fff; width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;
+  }
+  .step-content h4{ margin:0 0 6px 0; font-size:16px; color:#1e3a8a; }
+  .step-content p{ margin:0; font-size:14.5px; color:#334155; }
+
+  /* 流程图 */
+  .flowchart{
+    background:#0f172a; color:#e2e8f0; padding:24px; border-radius:12px;
+    font-family:"JetBrains Mono",Consolas,monospace; font-size:13.5px; line-height:1.8;
+    overflow-x:auto; white-space:pre;
+  }
+  .flowchart .comment{ color:#94a3b8; }
+  .flowchart .kw{ color:#60a5fa; }
+  .flowchart .sub{ color:#f472b6; }
+  .flowchart .par{ color:#fbbf24; }
+  .flowchart .llm{ color:#34d399; }
+
+  .note{
+    background:#fffbeb; border-left:4px solid #f59e0b; padding:16px; border-radius:0 8px 8px 0;
+    color:#78350f; font-size:14px; margin-top:16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>RAG 核心流程解析</h1>
+    <p>结合图书馆比喻：从建立索引到搜索回答</p>
+  </header>
+
+  <!-- 阶段一 -->
+  <div class="section-card">
+    <h2 class="section-title">
+      阶段一：建立索引 <span class="badge offline">离线准备 · 闭馆时进行</span>
+    </h2>
+    <p style="color:var(--muted); margin-top:0;">这个阶段用户看不到，发生在后台。系统正在把原始的笔记，加工成方便快速检索的格式。</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>现实比喻</th>
+          <th>代码函数</th>
+          <th>具体发生什么</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>1. 拆书</b></td>
+          <td><span class="code-tag">chunker.py</span></td>
+          <td>按标题切出 <b>父块</b>（整章节），把正文切出 <b>子块</b>（小段落）。</td>
+        </tr>
+        <tr>
+          <td><b>2. 做目录卡</b></td>
+          <td><span class="code-tag">embedder.py</span></td>
+          <td>给每一个 <b>子块</b> 算向量，变成类似“指纹”的目录卡。</td>
+        </tr>
+        <tr>
+          <td><b>3. 存卡片柜</b></td>
+          <td><span class="code-tag">store.py</span></td>
+          <td>把<b>子块</b>存入向量库，建好 BM25 关键词索引，等待被搜索。</td>
+        </tr>
+        <tr>
+          <td><b>4. 存原书</b></td>
+          <td><span class="code-tag">store.py</span></td>
+          <td>把<b>父块</b>纯文本放在档案库，暂不参与检索，只等被回填。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 阶段二 -->
+  <div class="section-card">
+    <h2 class="section-title">
+      阶段二：查找与回答 <span class="badge online">在线服务 · 用户提问时</span>
+    </h2>
+    <p style="color:var(--muted); margin-top:0;">你在输入框里敲下问题，系统开始这三步连招：</p>
+
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>查卡片（定位子块）</h4>
+          <p>系统把你的问题去<b>子块库</b>里对比（向量检索）。找到最匹配的一个小段落。<br>
+          <code>retriever.py → search()</code></p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>取原书（回填父块）</h4>
+          <p>系统看这个子块身上带的 <code>parent_id</code>，去<b>父块库</b>把这一整章的大块内容抽出来。<br>
+          <code>retriever.py → get_parents()</code></p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>总结回答（生成输出）</h4>
+          <p>系统把抽出来的<b>父块</b>全文交给大模型（AI），大模型阅读后，生成流式答案返回给你。<br>
+          <code>generator.py → build_context() → stream()</code></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全局图解 -->
+  <div class="section-card">
+    <h2 class="section-title">一图看懂数据流转</h2>
+    
+    <div class="flowchart">
+<span class="comment">// 离线建索引</span>
+原文件 <span class="kw">──切块──></span> <span class="sub">子块 (Chunk)</span>  <span class="kw">──算向量──></span>  向量库   <span class="comment">===> 用于“查得准”</span>
+        <span class="kw">└──切块──></span> <span class="par">父块 (Parent)</span> <span class="kw">──纯文本──></span>  档案库   <span class="comment">===> 用于“给得全”</span>
+
+<span class="comment">// 在线查找与回答</span>
+用户提问 <span class="kw">──算向量──></span> 搜 <span class="sub">子块</span> <span class="kw">──拿到ID──></span> 取 <span class="par">父块</span> <span class="kw">──发给──></span> <span class="llm">大模型 (LLM)</span> <span class="kw">──></span> 最终回答
+    </div>
+
+    <div class="note">
+      <b>核心秘诀：Small-to-Big</b><br>
+      因为子块小，所以“检索准”（能定位到具体段落）；<br>
+      因为父块大，所以“生成全”（大模型不会断章取义）。
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

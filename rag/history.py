@@ -1,4 +1,4 @@
-"""问答历史：每次问答追加到 history.jsonl，界面侧边栏可以回看。"""
+"""问答历史：每次问答追加到 history.jsonl，侧边栏可以回看和回溯。"""
 
 from __future__ import annotations
 

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG 检索流程：图书馆借书比喻版</title>
+<style>
+  :root{
+    --bg:#f8fafc;
+    --text:#1e293b;
+    --muted:#64748b;
+    --line:#cbd5e1;
+    --card-bg:#ffffff;
+    --accent-blue:#3b82f6;
+    --accent-purple:#6366f1;
+    --accent-bg:#eff6ff;
+    --arrow-color:#94a3b8;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px 20px;
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6;
+  }
+  .container{max-width:900px; margin:0 auto}
+  
+  /* 标题 */
+  .header{
+    text-align:center; margin-bottom:40px;
+  }
+  .header h1{
+    font-size:26px; color:#0f172a; margin-bottom:8px;
+  }
+  .header p{
+    color:var(--muted); font-size:15px; margin:0;
+  }
+
+  /* 流程图容器 */
+  .flowchart{
+    display:flex; flex-direction:column; align-items:center; gap:24px;
+  }
+
+  /* 节点通用样式 */
+  .node{
+    background:var(--card-bg); border:2px solid var(--line); border-radius:12px;
+    padding:16px 24px; text-align:center;
+    box-shadow:0 2px 4px rgba(0,0,0,0.02);
+    width: 100%; max-width: 320px;
+    position:relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .node:hover{
+    transform: translateY(-2px);
+    box-shadow:0 4px 12px rgba(0,0,0,0.05);
+  }
+  .node h3{ margin:0 0 6px 0; font-size:16px; color:#1e293b; }
+  .node p{ margin:0; font-size:13px; color:var(--muted); font-family:"JetBrains Mono",Consolas,monospace; }
+
+  /* 特定节点高亮 */
+  .node.top{ width:auto; padding:12px 40px; border-radius:30px; }
+  .node.bottom{ border-color:var(--accent-purple); background:var(--accent-bg); }
+  .node.bottom p{ color:var(--accent-purple); font-weight:bold; }
+
+  /* 分支容器 */
+  .branch-container{
+    display:flex; justify-content:center; gap:40px; width:100%; position:relative;
+  }
+  /* 分支上的线 (用伪元素实现) */
+  .branch-container::before{
+    content:""; position:absolute; top:-24px; left:50%; transform:translateX(-50%);
+    width:calc(100% - 320px); height:2px; background:var(--arrow-color);
+  }
+  .branch-line-left, .branch-line-right{
+    position:absolute; top:-24px; width:2px; height:24px; background:var(--arrow-color);
+  }
+  .branch-line-left{ left: calc(25% + 80px); }
+  .branch-line-right{ right: calc(25% + 80px); }
+
+  /* 箭头 */
+  .arrow-down{
+    width:2px; height:24px; background:var(--arrow-color); position:relative;
+  }
+  .arrow-down::after{
+    content:""; position:absolute; bottom:-6px; left:-5px;
+    border-left:6px solid transparent; border-right:6px solid transparent;
+    border-top:8px solid var(--arrow-color);
+  }
+
+  /* 图书馆比喻卡片 */
+  .metaphor-box{
+    margin-top:40px; display:flex; flex-direction:column; gap:16px;
+  }
+  .metaphor-item{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:20px; display:flex; gap:20px; align-items:flex-start;
+  }
+  .metaphor-icon{
+    font-size:24px; width:48px; height:48px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg); border-radius:12px;
+  }
+  .metaphor-text h4{ margin:0 0 6px 0; font-size:16px; color:#0f172a; }
+  .metaphor-text p{ margin:0; font-size:14.5px; color:#334155; }
+  
+  @media (max-width: 768px) {
+    .branch-container{ flex-direction:column; gap:20px; }
+    .branch-container::before, .branch-line-left, .branch-line-right{ display:none; }
+    .branch-container{ margin-top:0; }
+    .metaphor-item{ flex-direction:column; gap:10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>RAG 检索流程：图书馆借书比喻版</h1>
+    <p>把提问到输出的每一步，映射到现实生活中找书的场景</p>
+  </div>
+
+  <!-- 上方：流程图 -->
+  <div class="flowchart">
+    
+    <!-- 第一步：提问 -->
+    <div class="node top">
+      <h3>提问</h3>
+    </div>
+
+    <!-- 分支连接线 -->
+    <div class="branch-container">
+      <div class="branch-line-left"></div>
+      <div class="branch-line-right"></div>
+      
+      <!-- 左分支：向量检索 -->
+      <div class="node" style="z-index:1;">
+        <h3>向量检索</h3>
+        <p>search_dense</p>
+      </div>
+      
+      <!-- 右分支：关键词检索 -->
+      <div class="node" style="z-index:1;">
+        <h3>关键词检索</h3>
+        <p>BM25搜索</p>
+      </div>
+    </div>
+
+    <!-- 合并箭头 -->
+    <div style="display:flex; width:100%; max-width:680px; justify-content:space-around;">
+      <div class="arrow-down"></div>
+      <div class="arrow-down"></div>
+    </div>
+
+    <!-- 第三步：RRF融合+重排 -->
+    <div class="node bottom" style="border-color:var(--accent-blue); background:#f0f5ff;">
+      <h3 style="color:var(--accent-blue);">RRF 融合 + 重排</h3>
+      <p style="color:var(--accent-blue);">Retriever.search</p>
+    </div>
+
+    <!-- 向下箭头 -->
+    <div class="arrow-down"></div>
+
+    <!-- 第四步：生成 -->
+    <div class="node">
+      <h3>父块回填 · 生成</h3>
+      <p>build_context · 溪流(stream)</p>
+    </div>
+    
+  </div>
+
+  <!-- 下方：图书馆比喻对照 -->
+  <div class="metaphor-box">
+    
+    <div class="metaphor-item">
+      <div class="metaphor-icon">🙋‍♂️</div>
+      <div class="metaphor-text">
+        <h4>1. 提问 —— 读者向管理员求助</h4>
+        <p>你走到图书馆前台说：“我想找关于<strong>Python环境搭建</strong>的资料，最好是讲怎么配置<strong>虚拟环境</strong>的。”</p>
+      </div>
+    </div>
+
+    <div class="metaphor-item">
+      <div class="metaphor-icon">🧠</div>
+      <div class="metaphor-text">
+        <h4>2. 向量检索 —— 凭“意思”找书</h4>
+        <p>管理员是个老手，他懂你的“意思”。即使书名叫《AI开发从零开始》，只要里面讲了“用conda建独立盒子”，他也能根据语义关联，把这本<strong>意思相近</strong>的书找出来。</p>
+      </div>
+    </div>
+
+    <div class="metaphor-item">
+      <div class="metaphor-icon">🔍</div>
+      <div class="metaphor-text">
+        <h4>3. 关键词检索 —— 凭“字眼”翻目录</h4>
+        <p>另一个管理员是个死脑筋，他只查检索柜。你说要“虚拟环境”，他就只把书名或目录里<strong>赫然写着“虚拟环境”四个字</strong>的卡片全抽出来，错一个字都不行。</p>
+      </div>
+    </div>
+
+    <div class="metaphor-item">
+      <div class="metaphor-icon">⚖️</div>
+      <div class="metaphor-text">
+        <h4>4. RRF融合 + 重排 —— 统一打分，优中选优</h4>
+        <p>两位管理员把各自找到的卡片放在桌上。系统（RRF）开始综合评比：<strong>“既符合意思（左边找的），又包含原词（右边找的）”</strong>的书，排在最前面；只有单边推荐的，往后稍一稍。</p>
+      </div>
+    </div>
+
+    <div class="metaphor-item">
+      <div class="metaphor-icon">📚</div>
+      <div class="metaphor-text">
+        <h4>5. 父块回填 · 生成 —— 把原书交给你</h4>
+        <p>经过排重，系统发现“第3页第2段”（子块）最相关。但直接给你这半段话没法看，所以管理员去档案室，把这一整本<strong>原书（父块）</strong>抱出来，递给专家（大模型）。专家看完一整章后，写了一份完整的总结报告交给你（流式输出）。</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
