@@ -1,0 +1,78 @@
+# Obsidian 个人知识库 RAG 配置
+# 所有路径均可用环境变量覆盖：OBSIDIAN_VAULT / RAG_INDEX_DIR
+
+# Obsidian 仓库根目录（改成你自己的）
+vault_path: "C:/Users/admin/Documents/Obsidian Vault/hx"
+
+# 索引存放目录（相对本配置文件所在目录）
+index_dir: "./.lancedb"
+
+# 扫描时跳过的文件/目录（相对 vault 的 glob）
+exclude_globs:
+  - ".obsidian/**"
+  - ".trash/**"
+  - ".git/**"
+  - "**/*.excalidraw.md"
+  - "**/模板/**"
+  - "**/Templates/**"
+
+# ---------- 切块 ----------
+chunk:
+  # 子块目标长度（字符）。中文一个字约等于一个 token 量级
+  target_chars: 420
+  # 子块最大长度，超过则按句子再拆
+  max_chars: 900
+  # 子块最小长度，过短的块会与相邻块合并
+  min_chars: 120
+  # 拆分超长段落时的重叠字符数
+  overlap_chars: 80
+  # 父块（所属章节全文）上限，用于回填给大模型
+  parent_max_chars: 2000
+  # 是否在子块正文前拼接「笔记标题 > 章节 > 小节」的面包屑
+  breadcrumb_prefix: true
+
+# ---------- 向量化（本地） ----------
+embed:
+  # 本地模型目录（HF 缓存，1024 维）
+  model: "C:/Users/admin/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181"
+  # auto / cpu / cuda
+  device: "auto"
+  batch_size: 16
+  max_seq_length: 512
+  # bge-m3 不需要指令前缀；换回 bge-zh-v1.5 时填「为这个句子生成表示以用于检索相关文章：」
+  query_prefix: ""
+
+# ---------- 重排 ----------
+rerank:
+  enabled: false
+  model: "BAAI/bge-reranker-base"
+  # 进入重排的候选数量
+  top_n: 20
+
+# ---------- 检索 ----------
+retrieval:
+  dense_k: 20
+  bm25_k: 20
+  # RRF 融合常数
+  rrf_k: 60
+  # 最终送给大模型的片段数
+  final_k: 5
+  # 上下文总长度上限
+  context_max_chars: 7000
+  # 【第一道闸】绝对阈值靠不住（实测：库里完全没写的问题，bge-m3 也能给到 0.55），
+  # 所以只做相对过滤：留下与最高分差距在 dense_margin 以内的块
+  min_dense_score: 0.30
+  dense_margin: 0.10
+  # 【第二道闸的前置检查】生成前先用一次极短调用判断「这段片段能否回答问题」，
+  # 判定不能就直接拒答，不再生成。关掉它就会退回到“只靠 system prompt 约束”
+  verify_with_llm: true
+  # 最高向量分已经很高时，说明十有八九能答，跳过预检省一次往返
+  skip_verify_score: 0.65
+
+# ---------- 生成（云端，OpenAI 兼容接口） ----------
+llm:
+  base_url: "https://llm-z9sw4sitdg9jvpq7.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+  model: "qwen3.8-flash"
+  # 留空则读环境变量 DEEPSEEK_API_KEY / RAG_API_KEY / OPENAI_API_KEY，不要把真实 Key 提交到仓库
+  api_key: ""
+  temperature: 0

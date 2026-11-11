@@ -1,0 +1,19 @@
+# 索引与向量数据（重建即可，不要提交）
+.lancedb/
+lancedb_export/
+
+# 问答历史（含个人提问内容）
+history.jsonl
+
+# 运行日志与截图
+*.log
+.screenshots/
+
+# Python 缓存
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 本地模型
+models/
